@@ -1,8 +1,10 @@
 # AWS Lambda function for MediaInfo
 
-This project illustrates how to create an AWS Lambda function using Python 3.7 and [MediaInfo](https://mediaarea.net/en/MediaInfo) to get metadata and tag data for a video file stored in AWS S3. The Python MediaInfo library can be published together with the application code as an all-in-one Lambda function, or as a Lambda layer which reduces the size of the Lambda function and enables the function code to be displayed in the Lambda code viewer in the AWS console. Both deploy options are described in USAGE.
+This project illustrates how to create an AWS Lambda function using Python 3.7 and [MediaInfo](https://mediaarea.net/en/MediaInfo) to get metadata and tag data for a video file stored in AWS S3. The Python MediaInfo library can be published together with the application code as an all-in-one Lambda function, or as a Lambda layer which reduces the size of the Lambda function and enables the function code to be displayed in the Lambda code viewer in the AWS console. Both deploy options are described in USAGE. Option #1 results in a 1MB Lambda package and Option #2 is 716 bytes. They look like this in the AWS Lambda console:
 
-Sample output is shown [here](https://gist.github.com/iandow/7cd0ae84ad69f8fd993733903807bfe3).
+![images/lambda_function_sizes.png](images/lambda_function_sizes.png)
+
+Sample output from these Lambda functions is shown [here](https://gist.github.com/iandow/7cd0ae84ad69f8fd993733903807bfe3).
 
 ## USAGE:
 
@@ -51,21 +53,19 @@ cd -
 3. Deploy the Lambda function:
 ```
 # Upload a test video
+BUCKET_NAME=pymediainfo-test
+aws s3 mb s3://$BUCKET_NAME
 wget https://vjs.zencdn.net/v/oceans.mp4
 S3_KEY=videos/oceans.mp4
 aws s3 cp oceans.mp4 s3://$BUCKET_NAME/videos/
 # Create the Lambda function:
 FUNCTION_NAME=pymediainfo_allinone
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
-BUCKET_NAME=pymediainfo-test
-aws s3 mb s3://$BUCKET_NAME
 aws s3 cp $ZIPFILE s3://$BUCKET_NAME
 aws lambda create-function --function-name $FUNCTION_NAME --timeout 10 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region us-west-2 --runtime python3.7 --environment "Variables={BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="$ZIPFILE"
 ```
 
-One of the side effects of this approach is that the applciation code together with the dependencies exceeds 3MB. So, you cannot view the application code in the AWS Lambda function editor. See deployment Option #2 (below) to workaround this error:
-
-![images/editor_error.png](images/editor_error.png)
+The problem with the all-in-one approach is that it results in a larger zip file. In this case, allinone.zip is 1MB. If it exceeds 3MB then you won't be able to use the code editor in the AWS Lambda web user interface on http://console.aws.amazon.com/lambda/. So, if you plan on adding any other packages to the deployable zip, then use Option #2, described below. It deploys pymediainfo as a lambda layer, and therefore results in a much smaller zip file.
 
 ### Deploy Option #2 (preferred) - Lambda function with libraries as Lambda layers.
 
@@ -91,6 +91,8 @@ zip app.zip app.py
 
 4. Deploy the Lambda function:
 ```
+BUCKET_NAME=pymediainfo-test
+aws s3 mb s3://$BUCKET_NAME
 # Upload a test video
 wget https://vjs.zencdn.net/v/oceans.mp4
 S3_KEY=videos/oceans.mp4
@@ -98,10 +100,7 @@ aws s3 cp oceans.mp4 s3://$BUCKET_NAME/videos/
 # Create the Lambda function:
 FUNCTION_NAME=pymediainfo_layered
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
-BUCKET_NAME=pymediainfo-test
-aws s3 mb s3://$BUCKET_NAME
 aws s3 cp app.zip s3://$BUCKET_NAME
-S3_KEY="videos/oceans.mp4"
 aws lambda create-function --function-name $FUNCTION_NAME --timeout 20 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region us-west-2 --runtime python3.7 --environment "Variables={BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="app.zip"
 ```
 
@@ -125,11 +124,13 @@ aws lambda invoke --function-name $FUNCTION_NAME --log-type Tail outputfile.txt
 You should see output like this:
 ```
 {
-    "LogResult": "U1RBUlQgUmVxdWVzdElkOiBiMjI2YWEwZC0zMDhjLTRlNGEtYWFkNS02NTQ2MmFkZjRmNjAgVmVyc2lvbjogJExBVEVTVApbSU5GT10JMjAxOS0xMi0xMVQwNTowNDoyOC43MThaCWIyMjZhYTBkLTMwOGMtNGU0YS1hYWQ1LTY1NDYyYWRmNGY2MAlldmVudCBwYXJhbWV0ZXI6IHt9CgpbSU5GT10JMjAxOS0xMi0xMVQwNTowNDoyOS4xODFaCWIyMjZhYTBkLTMwOGMtNGU0YS1hYWQ1LTY1NDYyYWRmNGY2MAlGb3VuZCBjcmVkZW50aWFscyBpbiBlbnZpcm9ubWVudCB2YXJpYWJsZXMuCgp0cmFjayBpbmZvOiAzODU5NjMxIE5vbmUgTm9uZQpFTkQgUmVxdWVzdElkOiBiMjI2YWEwZC0zMDhjLTRlNGEtYWFkNS02NTQ2MmFkZjRmNjAKUkVQT1JUIFJlcXVlc3RJZDogYjIyNmFhMGQtMzA4Yy00ZTRhLWFhZDUtNjU0NjJhZGY0ZjYwCUR1cmF0aW9uOiA1MzQxLjMzIG1zCUJpbGxlZCBEdXJhdGlvbjogNTQwMCBtcwlNZW1vcnkgU2l6ZTogMTI4IE1CCU1heCBNZW1vcnkgVXNlZDogMTI0IE1CCUluaXQgRHVyYXRpb246IDM2NS4zMyBtcwkK",
+    "LogResult": "U1RBUlQgU..."
     "ExecutedVersion": "$LATEST",
     "StatusCode": 200
 }
 ```
+
+### Sample Output
 
 The outputfile.txt will contain metadata values for the oceans.mp4 video file, like this:
 (I added line breaks in the json below, to make it more readable.)
@@ -435,3 +436,4 @@ aws iam detach-role-policy --policy-arn arn:aws:iam::aws:policy/service-role/AWS
 aws iam detach-role-policy --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess --role-name $ROLE_NAME
 aws iam delete-role --role-name $ROLE_NAME
 ```
+
