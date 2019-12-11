@@ -111,7 +111,7 @@ aws lambda update-function-configuration --function-name $FUNCTION_NAME --layers
 ```
 
 ### Test the Lambda function:
-Our Lambda function requires an image as input. Copy an image to S3, like this:
+Our Lambda function requires a video as input. Copy a video to S3, like this:
 ```
 wget https://vjs.zencdn.net/v/oceans.mp4
 aws s3 cp ./oceans.mp4 s3://$BUCKET_NAME/videos/oceans.mp4
