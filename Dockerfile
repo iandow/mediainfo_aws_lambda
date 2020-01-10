@@ -36,7 +36,7 @@ RUN tar -xzvf MediaInfo_DLL_19.09_GNU_FromSource.tar.gz
 
 # Compile MediaInfo with Support for URL Inputs
 WORKDIR /root/MediaInfo_DLL_GNU_FromSource/
-./CLI_Compile.sh --with-libcurl
+RUN ./SO_Compile.sh
 
 # Create zip files for Lambda Layer deployment
 RUN cp /root/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/pymediainfo-3.7/
