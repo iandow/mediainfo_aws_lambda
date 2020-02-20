@@ -2,8 +2,11 @@
 #
 # This code shows how to use mediainfo from AWS Lambda. 
 #
+# PREREQUISITES:
+#   Set region in AWS_REGION environment variable in the Lamdba environment
+#
 # USAGE:
-#   See https://www.bigendiandata.com/2019-12-10-MediaInfo_AWS_Lambda/
+#   See https://www.bigendiandata.com/2019-12-10-MediaInfo_AWS_Lambda/.
 # 
 # USEFUL REFERENCES:
 #   https://github.com/iandow/mediainfo_aws_lambda
@@ -19,6 +22,8 @@ import botocore
 import os
 from pymediainfo import MediaInfo
 
+region = os.environ['AWS_REGION']
+
 def get_signed_url(expires_in, bucket, obj):
     """
     Generate a signed URL
@@ -27,9 +32,8 @@ def get_signed_url(expires_in, bucket, obj):
     :param obj:         S3 Key name
     :return:            Signed URL
     """
-    s3_cli = boto3.client("s3")
-    presigned_url = s3_cli.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': obj},
-                                                  ExpiresIn=expires_in)
+    s3_cli = boto3.client("s3", region_name=region, config = Config(signature_version = 's3v4', s3={'addressing_style': 'virtual'}))
+    presigned_url = s3_cli.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': obj}, ExpiresIn=expires_in)
     return presigned_url
 
 def lambda_handler(event, context):
