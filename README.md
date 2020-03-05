@@ -63,7 +63,7 @@ aws s3 cp oceans.mp4 s3://$BUCKET_NAME/videos/
 FUNCTION_NAME=pymediainfo_allinone
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
 aws s3 cp $ZIPFILE s3://$BUCKET_NAME
-aws lambda create-function --function-name $FUNCTION_NAME --timeout 10 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.7 --environment "Variables={BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY,AWS_REGION=$REGION}" --code S3Bucket="$BUCKET_NAME",S3Key="$ZIPFILE"
+aws lambda create-function --function-name $FUNCTION_NAME --timeout 10 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.7 --environment "Variables={LD_LIBRARY_PATH=/opt/python/,BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="$ZIPFILE"
 ```
 
 The problem with the all-in-one approach is that it results in a larger zip file. In this case, allinone.zip is 1MB. If it exceeds 3MB then you won't be able to use the code editor in the AWS Lambda web user interface on http://console.aws.amazon.com/lambda/. So, if you plan on adding any other packages to the deployable zip, then use Option #2, described below. It deploys pymediainfo as a lambda layer, and therefore results in a much smaller zip file.
@@ -102,8 +102,8 @@ aws s3 cp oceans.mp4 s3://$BUCKET_NAME/videos/
 # Create the Lambda function:
 FUNCTION_NAME=pymediainfo_layered
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
-aws s3 cp app.zip s3://$BUCKET_NAME
-aws lambda create-function --function-name $FUNCTION_NAME --timeout 20 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.7 --environment "Variables={BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY,AWS_REGION=$REGION}" --code S3Bucket="$BUCKET_NAME",S3Key="app.zip"
+aws s3 cp app.zip s3://$BUCKET_NAME/
+aws lambda create-function --function-name $FUNCTION_NAME --timeout 20 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.7 --environment "Variables={LD_LIBRARY_PATH=/opt/python/,BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="app.zip"
 ```
 
 7. Attach the `pymediainfo` Lambda layer to our Lambda function:
@@ -422,6 +422,12 @@ The outputfile.txt will contain metadata values for the oceans.mp4 video file, l
   ]
 }
 ```
+
+### Possible Errors
+
+If you get the error `libmediainfo.so.0: cannot open shared object file: No such file or directory` then double check two things:
+1. unzip the pymediainfo-python37.zip file and make sure you have the mediainfo libraries under python/ 
+2. make sure `LD_LIBRARY_PATH=/opt/python/` is defined as an environment variable for your Lambda function
 
 ### Clean up resources
 ```
