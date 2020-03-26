@@ -21,6 +21,7 @@ import boto3
 import botocore
 import os
 from pymediainfo import MediaInfo
+from botocore.config import Config
 
 region = os.environ['AWS_REGION']
 
