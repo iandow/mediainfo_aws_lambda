@@ -41,6 +41,8 @@ RUN ./SO_Compile.sh
 # Create zip files for Lambda Layer deployment
 RUN cp /root/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/pymediainfo-3.7/python
 RUN cp /root/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/pymediainfo-3.8/python
+RUN cp /root/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/pymediainfo-3.7/
+RUN cp /root/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/pymediainfo-3.8/
 WORKDIR /packages/pymediainfo-3.7/
 RUN zip -r9 /packages/pymediainfo-python37.zip .
 WORKDIR /packages/pymediainfo-3.8/
