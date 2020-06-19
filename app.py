@@ -86,7 +86,7 @@ def lambda_handler(event, context):
     # Generate a signed URL for the uploaded asset
     signed_url = get_signed_url(SIGNED_URL_EXPIRATION, BUCKET_NAME, S3_KEY)
     # Launch MediaInfo
-    media_info = MediaInfo.parse(signed_url)
+    media_info = MediaInfo.parse(signed_url, library_file='/opt/libmediainfo.so.0')
     for track in media_info.tracks:
         if track.track_type == 'Video':
             print("track info: " + str(track.bit_rate) + " " + str(track.bit_rate_mode)  + " " + str(track.codec))
