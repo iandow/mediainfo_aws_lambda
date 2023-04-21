@@ -5,7 +5,7 @@
 # 2. Build and copy MediaInfo libraries to ./pymediainfo-python[37,38].zip
 #     docker run --rm -it -v $(pwd):/data pymediainfo-layer-factory cp /packages/pymediainfo-python37.zip /data
 
-FROM amazonlinux
+FROM amazonlinux:1
 
 WORKDIR /
 RUN yum update -y
