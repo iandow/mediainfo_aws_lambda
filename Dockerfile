@@ -5,11 +5,11 @@
 # 2. Build and copy MediaInfo libraries to ./pymediainfo-python[37,38].zip
 #     docker run --rm -it -v $(pwd):/data pymediainfo-layer-factory cp /packages/pymediainfo-python37.zip /data
 
-FROM amazonlinux
+FROM amazonlinux:1
 
 WORKDIR /
 RUN yum update -y
-RUN yum install gcc gcc-c++ openssl-devel bzip2-devel libffi-devel wget tar gzip zip make -y
+RUN yum install gcc gcc-c++ openssl-devel bzip2-devel libffi-devel wget tar gzip zip make zlib-devel -y
 
 # Install Python 3.9
 WORKDIR /
