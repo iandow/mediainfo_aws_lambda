@@ -1,6 +1,6 @@
 # AWS Lambda function for MediaInfo
 
-This project illustrates how to create an AWS Lambda function using Python 3.7 and [MediaInfo](https://mediaarea.net/en/MediaInfo) to get metadata and tag data for a video file stored in AWS S3. The Python MediaInfo library can be published together with the application code as an all-in-one Lambda function, or as a Lambda layer which reduces the size of the Lambda function and enables the function code to be displayed in the Lambda code viewer in the AWS console. Both deploy options are described in USAGE. Option #1 results in a 1MB Lambda package and Option #2 is 716 bytes. They look like this in the AWS Lambda console:
+This project illustrates how to create an AWS Lambda function using Python 3.12 and [MediaInfo](https://mediaarea.net/en/MediaInfo) to get metadata and tag data for a video file stored in AWS S3. The Python MediaInfo library can be published together with the application code as an all-in-one Lambda function, or as a Lambda layer which reduces the size of the Lambda function and enables the function code to be displayed in the Lambda code viewer in the AWS console. Both deploy options are described in USAGE. Option #1 results in a 1MB Lambda package and Option #2 is 716 bytes. They look like this in the AWS Lambda console:
 
 ![images/lambda_function_sizes.png](images/lambda_function_sizes.png)
 
@@ -28,7 +28,7 @@ AWS Lambda functions run in an [Amazon Linux environment](https://docs.aws.amazo
 git clone https://github.com/iandow/mediainfo_aws_lambda
 cd mediainfo_aws_lambda
 docker build --tag=pymediainfo-layer-factory:latest .
-docker run --rm -it -v $(pwd):/data pymediainfo-layer-factory cp /packages/pymediainfo-python37.zip /data
+docker run --rm -it -v $(pwd):/data pymediainfo-layer-factory cp /packages/pymediainfo-python312.zip /data
 ```
 
 ### Deploy Option #1 - Lambda function with dependencies included.
@@ -43,9 +43,9 @@ vi app.py
 2. Combine Python libraries and app.py into a single all-in-one ZIP file
 ```
 ZIPFILE=allinone.zip
-unzip pymediainfo-python37.zip 
-cp app.py python/lib/python3.7/site-packages/
-cd python/lib/python3.7/site-packages/
+unzip pymediainfo-python312.zip 
+cp app.py python/lib/python3.12/site-packages/
+cd python/lib/python3.12/site-packages/
 zip -r9 ../../../../$ZIPFILE .
 cd -
 ```
@@ -63,7 +63,7 @@ aws s3 cp oceans.mp4 s3://$BUCKET_NAME/videos/
 FUNCTION_NAME=pymediainfo_allinone
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
 aws s3 cp $ZIPFILE s3://$BUCKET_NAME
-aws lambda create-function --function-name $FUNCTION_NAME --timeout 10 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.7 --environment "Variables={LD_LIBRARY_PATH=/opt/python/,BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="$ZIPFILE"
+aws lambda create-function --function-name $FUNCTION_NAME --timeout 10 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.12 --environment "Variables={LD_LIBRARY_PATH=/opt/python/,BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="$ZIPFILE"
 ```
 
 The problem with the all-in-one approach is that it results in a larger zip file. In this case, allinone.zip is 1MB. If it exceeds 3MB then you won't be able to use the code editor in the AWS Lambda web user interface on http://console.aws.amazon.com/lambda/. So, if you plan on adding any other packages to the deployable zip, then use Option #2, described below. It deploys pymediainfo as a lambda layer, and therefore results in a much smaller zip file.
@@ -81,8 +81,8 @@ ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
 LAMBDA_LAYERS_BUCKET=lambda-layers-$ACCOUNT_ID
 LAYER_NAME=pymediainfo
 aws s3 mb s3://$LAMBDA_LAYERS_BUCKET
-aws s3 cp pymediainfo-python37.zip s3://$LAMBDA_LAYERS_BUCKET
-aws lambda publish-layer-version --layer-name $LAYER_NAME --description "pymediainfo" --content S3Bucket=$LAMBDA_LAYERS_BUCKET,S3Key=pymediainfo-python37.zip --compatible-runtimes python3.7
+aws s3 cp pymediainfo-python312.zip s3://$LAMBDA_LAYERS_BUCKET
+aws lambda publish-layer-version --layer-name $LAYER_NAME --description "pymediainfo" --content S3Bucket=$LAMBDA_LAYERS_BUCKET,S3Key=pymediainfo-python312.zip --compatible-runtimes python3.12
 ```
 
 3. Create the Lambda function:
@@ -103,7 +103,7 @@ aws s3 cp oceans.mp4 s3://$BUCKET_NAME/videos/
 FUNCTION_NAME=pymediainfo_layered
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r ".Account")
 aws s3 cp app.zip s3://$BUCKET_NAME/
-aws lambda create-function --function-name $FUNCTION_NAME --timeout 20 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.7 --environment "Variables={LD_LIBRARY_PATH=/opt/python/,BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="app.zip"
+aws lambda create-function --function-name $FUNCTION_NAME --timeout 20 --role arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME --handler app.lambda_handler --region $REGION --runtime python3.12 --environment "Variables={LD_LIBRARY_PATH=/opt/python/,BUCKET_NAME=$BUCKET_NAME,S3_KEY=$S3_KEY}" --code S3Bucket="$BUCKET_NAME",S3Key="app.zip"
 ```
 
 7. Attach the `pymediainfo` Lambda layer to our Lambda function:
